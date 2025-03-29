@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Forensics Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .navbar {
+            margin-bottom: 30px;
+        }
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .card-header {
+            background-color: #0d6efd;
+            color: white;
+            font-weight: bold;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .table {
+            font-size: 0.9rem;
+        }
+        .alert-info {
+            background-color: #cfe2ff;
+            border-color: #b6d4fe;
+        }
+        .badge {
+            font-size: 85%;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Forensic Security Center</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/welcome">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/advanced_forensics">Advanced Forensics</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <span class="nav-link">Welcome, {{ username }}</span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="alert alert-info">
+            <h4 class="alert-heading">Forensic Analysis Dashboard</h4>
+            <p>This dashboard provides advanced forensic analysis tools for security investigators. All activities on this page are logged for audit purposes.</p>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        Attack Timeline Analysis
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Event</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for attack in attack_sequences %}
+                                <tr>
+                                    <td>{{ attack.timestamp }}</td>
+                                    <td>{{ attack.event }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        Active Honeytokens
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">These tokens are planted in the system to detect unauthorized access attempts.</p>
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Token Name</th>
+                                    <th>Token Value (Partial)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for name, value in honeytokens.items() %}
+                                <tr>
+                                    <td>{{ name }}</td>
+                                    <td>{{ value[:5] }}******</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        File Integrity Monitoring
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Current file hashes for critical system files.</p>
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>File</th>
+                                    <th>Hash (Partial)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for file, hash in file_hashes.items() %}
+                                <tr>
+                                    <td>{{ file }}</td>
+                                    <td>{{ hash[:8] }}...</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        Sample Forensic Report
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <strong>Case ID:</strong> {{ sample_report.case_id }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Timestamp:</strong> {{ sample_report.timestamp }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Analyst:</strong> {{ sample_report.analyst }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <strong>Severity:</strong>
+                            <span class="badge bg-{% if sample_report.severity == 'High' %}danger{% elif sample_report.severity == 'Medium' %}warning{% else %}info{% endif %}">
+                                {{ sample_report.severity }}
+                            </span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <strong>Findings:</strong>
+                            <ul>
+                                {% for finding in sample_report.findings %}
+                                <li>{{ finding }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <strong>Attack Vectors:</strong>
+                            <ul>
+                                {% for vector in sample_report.attack_vectors %}
+                                <li>{{ vector }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        
+                        {% if sample_report.recommendations %}
+                        <div class="mb-3">
+                            <strong>Recommendations:</strong>
+                            <ul>
+                                {% for rec in sample_report.recommendations %}
+                                <li>{{ rec }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

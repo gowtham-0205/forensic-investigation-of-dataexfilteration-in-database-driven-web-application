@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Recommendations</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <nav class="bg-indigo-800 text-white p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="text-xl font-bold">Security Recommendations</div>
+            <div>
+                Welcome, <span id="username">{{ username }}</span> | 
+                <a href="/logout" class="text-indigo-200 hover:text-white">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto py-6 px-4">
+        <h1 class="text-2xl font-bold text-gray-900 mb-6">Personalized Security Recommendations</h1>
+        
+        <p class="mb-6 text-gray-700">
+            Based on our analysis of recent security events, we've generated the following recommendations
+            to improve your application's security posture.
+        </p>
+
+        {% if recommendations %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {% for rec in recommendations %}
+                <div class="border rounded-lg p-4 {% if rec.severity == 'Critical' %}border-red-300 bg-red-50
+                            {% elif rec.severity == 'High' %}border-orange-300 bg-orange-50
+                            {% else %}border-yellow-300 bg-yellow-50{% endif %}">
+                    <div class="flex justify-between items-start">
+                        <h3 class="text-lg font-semibold">{{ rec.title }}</h3>
+                        <span class="px-2 py-1 text-xs rounded-full 
+                            {% if rec.severity == 'Critical' %}bg-red-200 text-red-800
+                            {% elif rec.severity == 'High' %}bg-yellow-200 text-yellow-800
+                            {% else %}bg-green-200 text-green-800{% endif %}">
+                            {{ rec.severity }}
+                        </span>
+                    </div>
+                    <p class="text-gray-700 my-2">{{ rec.description }}</p>
+                    <div class="mt-2">
+                        <h4 class="text-sm font-medium text-gray-700">Implementation:</h4>
+                        <p class="text-sm text-gray-600">{{ rec.implementation }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="bg-white rounded-lg shadow p-6 text-center">
+                <p class="text-gray-500">No security recommendations available at this time.</p>
+            </div>
+        {% endif %}
+
+        <div class="mt-6 flex justify-end">
+            <a href="/security_dashboard" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+                Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <footer class="bg-gray-200 p-4 mt-8">
+        <div class="container mx-auto text-center text-gray-600 text-sm">
+            <p>Security Recommendations are generated based on detected attack patterns.</p>
+        </div>
+    </footer>
+</body>
+</html>

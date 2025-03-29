@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anomaly Detection</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <nav class="bg-indigo-800 text-white p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="text-xl font-bold">Anomaly Detection</div>
+            <div>
+                Welcome, <span id="username">{{ username }}</span> | 
+                <a href="/logout" class="text-indigo-200 hover:text-white">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto py-6 px-4">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-900">Anomaly Detection Dashboard</h1>
+            <div>
+                <button id="refreshBtn" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+                    Refresh Data
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Detected Anomalies</h2>
+            
+            {% if anomalies %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white">
+                        <thead>
+                            <tr>
+                                <th class="py-2 px-4 bg-indigo-100 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Type</th>
+                                <th class="py-2 px-4 bg-indigo-100 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Details</th>
+                                <th class="py-2 px-4 bg-indigo-100 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Severity</th>
+                                <th class="py-2 px-4 bg-indigo-100 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for anomaly in anomalies %}
+                            <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                <td class="py-2 px-4 text-sm font-medium">{{ anomaly.type }}</td>
+                                <td class="py-2 px-4 text-sm">{{ anomaly.details }}</td>
+                                <td class="py-2 px-4 text-sm">
+                                    <span class="px-2 py-1 text-xs rounded-full 
+                                        {% if anomaly.severity == 'High' %}bg-red-200 text-red-800
+                                        {% elif anomaly.severity == 'Medium' %}bg-yellow-200 text-yellow-800
+                                        {% else %}bg-green-200 text-green-800{% endif %}">
+                                        {{ anomaly.severity }}
+                                    </span>
+                                </td>
+                                <td class="py-2 px-4 text-sm">
+                                    <button class="bg-indigo-600 text-white px-3 py-1 rounded text-xs hover:bg-indigo-700">Investigate</button>
+                                    <button class="bg-gray-300 text-gray-800 px-3 py-1 rounded text-xs hover:bg-gray-400 ml-1">Dismiss</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="py-6 text-center text-gray-500">
+                    <p>No anomalies detected at this time.</p>
+                    <p class="text-sm mt-2">This could mean your system is secure or that attack patterns haven't triggered detection thresholds.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="mt-6 bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Understanding Anomaly Detection</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="border rounded p-4 border-indigo-200 bg-indigo-50">
+                    <h3 class="font-semibold mb-2">Multiple Failed Logins</h3>
+                    <p class="text-sm text-gray-700">Detects when an IP address has multiple failed login attempts in a short period, which may indicate brute force attempts.</p>
+                </div>
+                <div class="border rounded p-4 border-indigo-200 bg-indigo-50">
+                    <h3 class="font-semibold mb-2">Unusual Login Times</h3>
+                    <p class="text-sm text-gray-700">Identifies login attempts outside of typical user activity hours, which could indicate compromised credentials.</p>
+                </div>
+                <div class="border rounded p-4 border-indigo-200 bg-indigo-50">
+                    <h3 class="font-semibold mb-2">Multiple Attack Techniques</h3>
+                    <p class="text-sm text-gray-700">Identifies when different attack vectors are used in quick succession, suggesting a coordinated attack attempt.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-6 flex justify-end">
+            <a href="/security_dashboard" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+                Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Simple refresh functionality
+        document.getElementById('refreshBtn').addEventListener('click', function() {
+            location.reload();
+        });
+    </script>
+</body>
+</html>

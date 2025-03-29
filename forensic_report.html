@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forensic Report</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        var socket = io.connect("http://" + document.domain + ":" + location.port);
+
+        socket.on("new_log", function(data) {
+            var table = document.getElementById("logTableBody");
+            var newRow = table.insertRow(0);
+
+            newRow.innerHTML = `
+                <td>${data.Timestamp}</td>
+                <td>${data.Username}</td>
+                <td>${data.Query}</td>
+                <td>${data["Attack Detected"]}</td>
+                <td>${data.Severity}</td>
+                <td>${data["IP Address"]}</td>
+                <td>${data["User Agent"]}</td>
+                <td>${data["Login Status"]}</td>
+            `;
+        });
+    </script>
+</head>
+<body>
+    <h2>Forensic Report</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Username</th>
+                <th>Query</th>
+                <th>Attack Detected</th>
+                <th>Severity</th>
+                <th>IP Address</th>
+                <th>User Agent</th>
+                <th>Login Status</th>
+            </tr>
+        </thead>
+        <tbody id="logTableBody">
+            {{ logs_html|safe }}
+        </tbody>
+    </table>
+</body>
+</html>

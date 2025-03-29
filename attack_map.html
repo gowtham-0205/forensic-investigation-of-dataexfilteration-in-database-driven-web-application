@@ -1,0 +1,231 @@
+<!-- templates/attack_map.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Attack Map</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+    <style>
+        #map { height: 600px; width: 100%; }
+        #attack-log {
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.9em;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border: 1px solid #dee2e6;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        .log-high {
+            background-color: rgba(255, 0, 0, 0.1);
+        }
+        .log-medium {
+            background-color: rgba(255, 165, 0, 0.1);
+        }
+        .log-low {
+            background-color: rgba(0, 0, 255, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>Global Attack Map</h1>
+        <div class="alert alert-info">
+            This map shows the geographic origin of detected attacks on your system in real-time.
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-md-9">
+                <div id="connection-status" class="alert alert-warning">Connecting to server...</div>
+            </div>
+            <div class="col-md-3">
+                <button id="test-button" class="btn btn-danger w-100">Simulate SQL Injection Attack</button>
+            </div>
+        </div>
+        
+        <div id="map"></div>
+        
+        <div class="mt-3">
+            <h5>Attack Log</h5>
+            <div id="attack-log"></div>
+        </div>
+        
+        <div class="mt-3">
+            <h5>Test SQL Injection</h5>
+            <form id="sql-injection-form" class="mb-3">
+                <div class="input-group">
+                    <input type="text" id="sql-query" class="form-control" placeholder="Enter SQL injection payload (e.g., 'OR 1=1--)" value="' OR 1=1--">
+                    <button class="btn btn-warning" type="submit">Send SQL Injection Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // Initialize the map
+        const map = L.map('map').setView([30, 0], 2);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+        
+        // Attack log
+        const attackLog = document.getElementById('attack-log');
+        
+        function addLogEntry(message, severity = '') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${severity.toLowerCase()}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            attackLog.appendChild(entry);
+            attackLog.scrollTop = attackLog.scrollHeight;
+        }
+        
+        // Initialize Socket.IO for real-time updates
+        const socket = io('http://127.0.0.1:5000', {
+            transports: ['websocket', 'polling'],
+            reconnectionAttempts: 5,
+            timeout: 10000
+        });
+        
+        // Connection status indicators
+        const statusDiv = document.getElementById('connection-status');
+        
+        socket.on('connect', function() {
+            console.log('Connected to Socket.IO server');
+            statusDiv.className = 'alert alert-success';
+            statusDiv.textContent = 'Connected to real-time security updates';
+            addLogEntry('WebSocket connected to server', 'Low');
+        });
+        
+        socket.on('connect_error', function(error) {
+            console.error('Socket.IO connection error:', error);
+            statusDiv.className = 'alert alert-danger';
+            statusDiv.textContent = 'Error connecting to security server: ' + error;
+            addLogEntry('Connection error: ' + error, 'High');
+        });
+        
+        // Listen for any event (for debugging)
+        socket.onAny((event, ...args) => {
+            console.log(`Received event: ${event}`, args);
+            addLogEntry(`Received socket event: ${event}`, 'Medium');
+        });
+        
+        // Handle security incidents
+        socket.on('security_incident', function(data) {
+            console.log('Received security incident:', data);
+            addLogEntry(`New security incident: ${data.incident_type} (${data.severity}) from ${data.source_ip || 'unknown IP'}`, data.severity);
+            
+            // Use provided coordinates if available, otherwise use random ones
+            const lat = data.lat || (Math.random() * 40 + 20);
+            const lng = data.lng || (Math.random() * 150 - 75);
+            
+            const color = data.severity === 'High' ? 'red' : 
+                        (data.severity === 'Medium' ? 'orange' : 'blue');
+            
+            const marker = L.circleMarker([lat, lng], {
+                radius: 8,
+                fillColor: color,
+                color: '#000',
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.8
+            }).addTo(map);
+            
+            marker.bindPopup(`
+                <strong>${data.incident_type}</strong><br>
+                ${data.case_id ? `Case ID: ${data.case_id}<br>` : ''}
+                Severity: ${data.severity}<br>
+                Time: ${data.timestamp}
+                ${data.details ? `<br>Details: ${data.details}` : ''}
+            `);
+            
+            // Pulse animation to highlight new attack
+            let size = 8;
+            const interval = setInterval(() => {
+                marker.setRadius(size);
+                size += 2;
+                if (size > 30) clearInterval(interval);
+            }, 50);
+        });
+        
+        // Load initial attack locations
+        fetch('/api/attack_locations')
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    console.error("Error loading attack data:", data.error);
+                    addLogEntry("Error loading attack data: " + data.error, 'High');
+                    return;
+                }
+                
+                addLogEntry(`Loaded ${data.length} historical attacks`, 'Low');
+                
+                // Add markers for each attack
+                data.forEach(attack => {
+                    const color = attack.severity === 'High' ? 'red' : 
+                                (attack.severity === 'Medium' ? 'orange' : 'blue');
+                    
+                    const marker = L.circleMarker([attack.lat, attack.lng], {
+                        radius: 8,
+                        fillColor: color,
+                        color: '#000',
+                        weight: 1,
+                        opacity: 1,
+                        fillOpacity: 0.8
+                    }).addTo(map);
+                    
+                    marker.bindPopup(`
+                        <strong>${attack.attack_type}</strong><br>
+                        IP: ${attack.ip}<br>
+                        Severity: ${attack.severity}<br>
+                        Time: ${attack.timestamp}
+                    `);
+                });
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                addLogEntry("Error fetching attack locations: " + error, 'High');
+            });
+        
+        // Test button to simulate an attack
+        document.getElementById('test-button').addEventListener('click', function() {
+            fetch('/test_emit')
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Test event triggered:", data);
+                    addLogEntry("Test attack event triggered", 'Medium');
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    addLogEntry("Error triggering test event: " + error, 'High');
+                });
+        });
+        
+        // SQL Injection test form
+        document.getElementById('sql-injection-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const query = document.getElementById('sql-query').value;
+            
+            addLogEntry(`Sending SQL injection test: ${query}`, 'Medium');
+            
+            fetch(`/test_sql_injection?query=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log("SQL injection test response:", data);
+                    addLogEntry("SQL injection test response: " + JSON.stringify(data), 'Medium');
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    addLogEntry("SQL injection test error: " + error, 'High');
+                });
+        });
+    </script>
+</body>
+</html>
